@@ -38,6 +38,7 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
     public NettyTcpServer serv;
     public Channel client;
     public Map<String, Consumer<Tuple<ByteBuf, ChannelHandlerContext>>> callbacks = new HashMap<>();
+    public Map<String,RemoteCefClient> remoteCefClientMap = new HashMap<>();
     public Process getProcess() {
         return process;
     }
@@ -53,6 +54,7 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
             return null;
         });
         remoteCommands.regHandler(remoteCommands.BROWSER_ONPAINT, tuple -> {
+            var uuidClient = BufUtil.readString(tuple.a());
             var uuid = BufUtil.readString(tuple.a());
             var popup = tuple.a().readBoolean();
             var rects = BufUtil.readRectangles(tuple.a());
@@ -74,6 +76,7 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
 
                 rectBuffers.add(nioBuffer);
             }
+            remoteCefClientMap.get(uuidClient).browserMap.get(uuid).cefRenderer.onPaint(popup,rects,rectBuffers,w,h,completeReRender);
             return null;
         });
     }
@@ -226,5 +229,9 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
     @Override
     public Consumer<Tuple<ByteBuf, ChannelHandlerContext>> getCallback(String uuid) {
         return callbacks.get(uuid);
+    }
+
+    public void destroy() {
+        serv.stop();
     }
 }

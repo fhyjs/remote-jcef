@@ -28,6 +28,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT;
+
 /**
  * CefBrowserMC: windowless/off-screen browser
  */
@@ -345,27 +348,45 @@ public class CefBrowserMC  extends CefBrowser_N implements CefRenderHandler , Cl
     public void mouseScrolled(int x, int y, int mods, int amount, int rot) {
         MouseWheelEvent ev = new MouseWheelEvent(dc_, MouseEvent.MOUSE_WHEEL, 0, mods, x, y, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, amount, rot);
         sendMouseWheelEvent(ev);
+        System.out.println(ev);
     }
 
     public void keyTyped(char c, int mods) {
         KeyEvent ev = new KeyEvent(dc_, KeyEvent.KEY_TYPED, 0, mods, 0, c);
         sendKeyEvent(ev);
     }
-
+    /**
+     * fill the gap between LWJGL and AWT key codes
+     * https://stackoverflow.com/questions/15313469/java-keyboard-keycodes-list/31637206
+     */
+    private static int remapKeycode(int kc) {
+        switch(kc) {
+            case GLFW_KEY_BACKSPACE: return 0x08;
+            case GLFW_KEY_LEFT: return 37;
+            case KeyEvent.VK_ENTER: return 0x0D;
+            case KeyEvent.VK_SHIFT: return 0x10;
+            case KeyEvent.VK_CONTROL: return 0x11;
+            case KeyEvent.VK_ALT: return 0x12;
+            case KeyEvent.VK_ESCAPE: return 0x1B;
+            // 其它按键按 VK_A..VK_Z, VK_0..VK_9 映射
+            default: return kc;
+        }
+    }
 
     public void keyEventByKeyCode(int keyCode, int scancode, int mods, boolean pressed) {
-        int cefKeyCode = keyCode; // 只用 keyCode 做 CEF keyCode 映射
+        System.out.printf("kc:%d,sc:%d,mod:%d,pr:%s%n", keyCode,scancode,mods, pressed);
+        int cefKeyCode = remapKeycode(keyCode); // 只用 keyCode 做 CEF keyCode 映射
         char c = KeyCodeUtil.keyCodeToChar(keyCode, false);
         var ev =
-            new KeyEvent(
-                    dc_,
-                    pressed ? KeyEvent.KEY_PRESSED : KeyEvent.KEY_RELEASED,
-                    System.currentTimeMillis(),
-                    mods,
-                    cefKeyCode,
-                    c==KeyEvent.CHAR_UNDEFINED?0:c,
-                    KeyEvent.KEY_LOCATION_STANDARD
-        );
+                new KeyEvent(
+                        dc_,
+                        pressed ? KeyEvent.KEY_PRESSED : KeyEvent.KEY_RELEASED,
+                        System.currentTimeMillis(),
+                        mods,
+                        cefKeyCode,
+                        c==KeyEvent.CHAR_UNDEFINED?0:c,
+                        KeyEvent.KEY_LOCATION_STANDARD
+                );
         Unsafe theUnsafe;
 
 // scancode = 低 8 位
@@ -380,7 +401,7 @@ public class CefBrowserMC  extends CefBrowser_N implements CefRenderHandler , Cl
             e.printStackTrace();
         }
 
-
+        System.out.println(ev);
         sendKeyEvent(ev);
     }
 

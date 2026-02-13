@@ -15,7 +15,7 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
-public class CefNettyClient implements ICefRenderer {
+public class CefNettyClient   {
     private final String host;
     private final int port;
     private final ClientMain main;
@@ -47,7 +47,7 @@ public class CefNettyClient implements ICefRenderer {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(
-                                10 * 1024 * 1024, // 最大帧长度
+                                100 * 1024 * 1024, // 最大帧长度
                                 0,                 // 长度字段偏移 0
                                 4,                 // 长度字段长度 4
                                 0,                 // 长度调整 = 0
@@ -83,63 +83,5 @@ public class CefNettyClient implements ICefRenderer {
         if (group != null) {
             group.shutdownGracefully();
         }
-    }
-    @Override
-    public void render(double x1, double y1, double x2, double y2) {
-
-    }
-
-    @Override
-    public void destroy() {
-        stop();
-    }
-
-    @Override
-    public void onPaint(boolean popup, Rectangle[] dirtyRects, ByteBuffer buffer, int width, int height, boolean completeReRender) {
-        if (channel == null || !channel.isActive()) return;
-
-        CompositeByteBuf composite = channel.alloc().compositeBuffer();
-
-        // 先写事件类型
-        ByteBuf headerBuf = channel.alloc().buffer();
-        BufUtil.writeString("onPaint", headerBuf);
-        headerBuf.writeBoolean(popup);
-        BufUtil.writeRectangles(dirtyRects, headerBuf);
-        headerBuf.writeInt(width);
-        headerBuf.writeInt(height);
-        headerBuf.writeBoolean(completeReRender);
-
-        composite.addComponent(true, headerBuf);
-
-        // 发送每个 dirty rect 数据
-        for (Rectangle rect : dirtyRects) {
-            int rectSize = rect.width * rect.height * 4; // RGBA 4 bytes
-            int offset = (rect.y * width + rect.x) * 4;
-
-            ByteBuffer slice = buffer.duplicate();
-            slice.position(offset);
-            slice.limit(offset + rectSize);
-
-            ByteBuf rectBuf = channel.alloc().directBuffer(rectSize);
-            rectBuf.writeBytes(slice);
-            composite.addComponent(true, rectBuf);
-        }
-
-        channel.writeAndFlush(composite);
-    }
-
-    @Override
-    public void onPopupSize(Rectangle var1) {
-
-    }
-
-    @Override
-    public void onPopupClosed() {
-
-    }
-
-    @Override
-    public CompletableFuture<BufferedImage> createScreenshot(boolean nativeResolution) {
-        return null;
     }
 }

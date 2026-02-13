@@ -31,6 +31,7 @@ public class CelInstaller {
         ));
         b.addJcefArgs("--remote-allow-origins=*");
         b.getCefSettings().remote_debugging_port= CefUtil.getRandomPort();
+        b.getCefSettings().windowless_rendering_enabled= true;
         b.getCefSettings().log_severity= CefSettings.LogSeverity.LOGSEVERITY_VERBOSE;
         //b.getCefSettings().log_severity
         DEBUG_PORT=b.getCefSettings().remote_debugging_port;

@@ -40,7 +40,7 @@ public class NettyTcpServer {
                         @Override
                         protected void initChannel(SocketChannel ch) {
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(
-                                    10 * 1024 * 1024, // 最大帧长度
+                                    100 * 1024 * 1024, // 最大帧长度
                                     0,                 // 长度字段偏移 0
                                     4,                 // 长度字段长度 4
                                     0,                 // 长度调整 = 0

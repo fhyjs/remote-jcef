@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.Closeable;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface IBrowser extends Closeable {
@@ -36,4 +37,29 @@ public interface IBrowser extends Closeable {
 
     @Override
     void close();
+
+    static void restoreRect(ByteBuffer src,
+                            Rectangle rect,
+                            ByteBuffer canvas,
+                            int canvasWidth) {
+
+        int bpp = 4;
+        int rowBytes = rect.width * bpp;
+
+        for (int row = 0; row < rect.height; row++) {
+
+            int srcPos = row * rowBytes;
+            int dstPos = ((rect.y + row) * canvasWidth + rect.x) * bpp;
+
+            ByteBuffer srcSlice = src.duplicate();
+            srcSlice.position(srcPos);
+            srcSlice.limit(srcPos + rowBytes);
+
+            ByteBuffer dstSlice = canvas.duplicate();
+            dstSlice.position(dstPos);
+
+            dstSlice.put(srcSlice);
+        }
+    }
+
 }

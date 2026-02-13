@@ -13,10 +13,12 @@ import java.util.concurrent.CompletableFuture;
 public class ClientRender implements ICefRenderer {
     private final String uuid;
     private final ClientMain client;
+    private final String clientUuid;
 
-    public ClientRender(String uuid, ClientMain clientMain) {
+    public ClientRender(String uuid, String uuidClient, ClientMain clientMain) {
         this.uuid=uuid;
         this.client=clientMain;
+        this.clientUuid=uuidClient;
     }
 
     @Override
@@ -38,6 +40,7 @@ public class ClientRender implements ICefRenderer {
         // 先写事件类型
         ByteBuf headerBuf = client.cnc.channel.alloc().buffer();
         BufUtil.writeString(client.remoteCommands.BROWSER_ONPAINT, headerBuf);
+        BufUtil.writeString(clientUuid, headerBuf);
         BufUtil.writeString(uuid, headerBuf);
         headerBuf.writeBoolean(popup);
         BufUtil.writeRectangles(dirtyRects, headerBuf);
@@ -48,16 +51,33 @@ public class ClientRender implements ICefRenderer {
         composite.addComponent(true, headerBuf);
 
         // 发送每个 dirty rect 数据
+        // framebuffer 每行字节数
+        final int stride = width * 4;
+
         for (Rectangle rect : dirtyRects) {
-            int rectSize = rect.width * rect.height * 4; // RGBA 4 bytes
-            int offset = (rect.y * width + rect.x) * 4;
 
-            ByteBuffer slice = buffer.duplicate();
-            slice.position(offset);
-            slice.limit(offset + rectSize);
+            final int rowBytes = rect.width * 4;
+            final int rectBytes = rect.height * rowBytes;
 
-            ByteBuf rectBuf = client.cnc.channel.alloc().directBuffer(rectSize);
-            rectBuf.writeBytes(slice);
+            ByteBuf rectBuf = client.cnc.channel.alloc()
+                    .directBuffer(rectBytes);
+
+            // 只 duplicate 一次
+            ByteBuffer src = buffer.duplicate();
+
+            // 起始偏移
+            int start = rect.y * stride + rect.x * 4;
+
+            for (int row = 0; row < rect.height; row++) {
+
+                int offset = start + row * stride;
+
+                src.clear().position(offset).limit(offset + rowBytes);
+                rectBuf.writeBytes(src);
+
+                rectBuf.writeBytes(src);
+            }
+
             composite.addComponent(true, rectBuf);
         }
 

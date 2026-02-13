@@ -14,10 +14,27 @@ import java.util.function.Function;
 public class RemoteCommands {
 
 
+
     private final CallbackRegister cr;
     public Map<String, Function<Tuple<ByteBuf, ChannelHandlerContext>,ByteBuf>> processor = new HashMap<>();
-
+    public final String CLIENT_DSETROY = "cli_des";
     public final String BROWSER_RESIZE = "bro_resize";
+    public final String BROWSER_mouseInteracted = "BROWSER_mouseInteracted";
+    public final String BROWSER_keyTyped = "BROWSER_keyTyped";
+    public final String BROWSER_keyEventByKeyCode = "BROWSER_keyEventByKeyCode";
+    public final String BROWSER_doClose = "BROWSER_doClose";
+    public final String BROWSER_mouseScrolled = "BROWSER_mouseScrolled";
+    public final String BROWSER_mouseMoved = "BROWSER_mouseMoved";
+    public final String BROWSER_getTitle = "BROWSER_getTitle";
+    public final String BROWSER_canGoBack = "BROWSER_mcanGoBack";
+    public final String BROWSER_canGoForward = "BROWSER_canGoForward";
+    public final String BROWSER_isLoading = "BROWSER_isLoading";
+    public final String BROWSER_reload = "BROWSER_reload";
+    public final String BROWSER_loadURL = "BROWSER_loadURL";
+    public final String BROWSER_executeJavaScript = "BROWSER_executeJavaScript";
+    public final String BROWSER_getURL = "BROWSER_getURL";
+    public final String BROWSER_goBack = "BROWSER_goBack";
+    public final String BROWSER_goForward = "BROWSER_goForward";
     public final String CREATE_APP = "ct_app";
     public final String CREATE_BROWSER = "ct_bro";
     public final String CREATE_BROWSER_IMMEDIATELY = "ct_bro_imm";

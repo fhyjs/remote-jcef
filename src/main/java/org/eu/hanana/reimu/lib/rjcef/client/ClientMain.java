@@ -63,7 +63,7 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             String url = BufUtil.readString(tuple.a());
             String uuid = UUID.randomUUID().toString();
             System.out.println(uuidClient);
-            browserMCHashMap.get(uuidClient).put(uuid,new CefBrowserMC(cefClientMap.get(uuidClient),url,true, CefRequestContext.getGlobalContext(),new ClientRender(uuid,this)));
+            browserMCHashMap.get(uuidClient).put(uuid,new CefBrowserMC(cefClientMap.get(uuidClient),url,true, CefRequestContext.getGlobalContext(),new ClientRender(uuid,uuidClient,this)));
             ByteBuf byteBuf = tuple.b().alloc().directBuffer();
             BufUtil.writeString(uuid,byteBuf);
             return byteBuf;
@@ -80,6 +80,50 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             String uuidClient = BufUtil.readString(tuple.a());
             String uuid = BufUtil.readString(tuple.a());
             browserMCHashMap.get(uuidClient).get(uuid).wasResized_(tuple.a().readInt(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.CLIENT_DSETROY, tuple -> {
+            System.out.println("CLIENT_DSETROY");
+            String uuidClient = BufUtil.readString(tuple.a());
+            browserMCHashMap.remove(uuidClient);
+            cefClientMap.get(uuidClient).dispose();
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_mouseInteracted, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).mouseInteracted(tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readBoolean(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_mouseMoved, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).mouseMoved(tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_keyTyped, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).keyTyped(tuple.a().readChar(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_keyEventByKeyCode, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).keyEventByKeyCode(tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readBoolean());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_mouseScrolled, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).mouseScrolled(tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_doClose, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).close();
+            browserMCHashMap.get(uuidClient).remove(uuid);
             return null;
         });
         cnc.start();
@@ -107,7 +151,7 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         try {
             String cmd = BufUtil.readString(msg);
-            System.out.println("cmd: "+ cmd);
+            //System.out.println("cmd: "+ cmd);
             remoteCommands.processor.get(cmd).apply(new Tuple<>(msg,ctx));
         }catch (Exception e){
             e.printStackTrace();

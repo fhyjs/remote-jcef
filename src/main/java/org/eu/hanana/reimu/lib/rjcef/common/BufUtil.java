@@ -19,6 +19,7 @@ public class BufUtil {
         String uuid = UUID.randomUUID().toString();
         writeString(uuid,byteBuf1);
         byteBuf1.writeBytes(byteBuf);
+        byteBuf.release();
         callbackRegister.registerCallback(uuid,callback);
         return channel.writeAndFlush(byteBuf1);
     }
