@@ -52,7 +52,7 @@ public interface ICefRenderer {
 
     void onPopupClosed();
 
-    default void onTitleChange(CefBrowserMC cefBrowserMC, String title){}
+    default void onTitleChange(IBrowser cefBrowserMC, String title){}
 
     CompletableFuture<BufferedImage> createScreenshot(boolean nativeResolution);
 }

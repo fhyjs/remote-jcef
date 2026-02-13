@@ -629,7 +629,7 @@ public class RemoteCefBrowser implements CefBrowser, IBrowser {
 
     @Override
     public void onTitleChange(CefBrowserMC cefBrowserMC, String title) {
-
+        cefRenderer.onTitleChange(this,title);
     }
 
     @Override

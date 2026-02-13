@@ -7,7 +7,9 @@ import me.friwi.jcefmaven.CefInitializationException;
 import me.friwi.jcefmaven.UnsupportedPlatformException;
 import org.cef.CefApp;
 import org.cef.CefClient;
+import org.cef.browser.CefBrowser;
 import org.cef.browser.CefRequestContext;
+import org.cef.handler.CefDisplayHandlerAdapter;
 import org.eu.hanana.reimu.lib.rjcef.common.BufUtil;
 import org.eu.hanana.reimu.lib.rjcef.common.CallbackRegister;
 import org.eu.hanana.reimu.lib.rjcef.common.RemoteCommands;
@@ -50,7 +52,20 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
         remoteCommands.regHandler(remoteCommands.CREATE_CLIENT, tuple -> {
             System.out.println("CREATE_CLIENT");
             String uuid = UUID.randomUUID().toString();
-            cefClientMap.put(uuid,cefApp.createClient());
+            CefClient client = cefApp.createClient();
+            client.addDisplayHandler(new CefDisplayHandlerAdapter() {
+
+                @Override
+                public void onTitleChange(CefBrowser browser, String title) {
+                    if (browser instanceof CefBrowserMC cefBrowserMC){
+                        cefBrowserMC.onTitleChange(cefBrowserMC, title);
+                    }
+
+                    // 例如：同步到窗口标题 / UI
+                    // glfwSetWindowTitle(window, title);
+                }
+            });
+            cefClientMap.put(uuid, client);
             browserMCHashMap.put(uuid,new HashMap<>());
             ByteBuf byteBuf = tuple.b().alloc().directBuffer();
             BufUtil.writeString(uuid,byteBuf);
@@ -117,6 +132,24 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             String uuidClient = BufUtil.readString(tuple.a());
             String uuid = BufUtil.readString(tuple.a());
             browserMCHashMap.get(uuidClient).get(uuid).mouseScrolled(tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt(),tuple.a().readInt());
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_reload, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).reload();
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_goForward, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).goForward();
+            return null;
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_goBack, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+            browserMCHashMap.get(uuidClient).get(uuid).goBack();
             return null;
         });
         remoteCommands.regHandler(remoteCommands.BROWSER_doClose, tuple -> {

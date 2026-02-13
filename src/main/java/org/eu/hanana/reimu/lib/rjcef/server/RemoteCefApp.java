@@ -79,6 +79,14 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
             remoteCefClientMap.get(uuidClient).browserMap.get(uuid).cefRenderer.onPaint(popup,rects,rectBuffers,w,h,completeReRender);
             return null;
         });
+        remoteCommands.regHandler(remoteCommands.BROWSER_onTitleChange, tuple -> {
+            var uuidClient = BufUtil.readString(tuple.a());
+            var uuid = BufUtil.readString(tuple.a());
+            var title = BufUtil.readString(tuple.a());
+
+            remoteCefClientMap.get(uuidClient).browserMap.get(uuid).onTitleChange(null,title);
+            return null;
+        });
     }
 
     protected void setConnected(boolean connected) {

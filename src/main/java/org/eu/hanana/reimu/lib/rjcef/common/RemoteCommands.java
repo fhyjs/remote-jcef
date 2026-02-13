@@ -35,6 +35,7 @@ public class RemoteCommands {
     public final String BROWSER_getURL = "BROWSER_getURL";
     public final String BROWSER_goBack = "BROWSER_goBack";
     public final String BROWSER_goForward = "BROWSER_goForward";
+    public final String BROWSER_onTitleChange = "BROWSER_onTitleChange";
     public final String CREATE_APP = "ct_app";
     public final String CREATE_BROWSER = "ct_bro";
     public final String CREATE_BROWSER_IMMEDIATELY = "ct_bro_imm";

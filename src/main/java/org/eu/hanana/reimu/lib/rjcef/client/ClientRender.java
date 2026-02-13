@@ -3,6 +3,7 @@ package org.eu.hanana.reimu.lib.rjcef.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import org.eu.hanana.reimu.lib.rjcef.common.BufUtil;
+import org.eu.hanana.reimu.lib.rjcef.common.IBrowser;
 import org.eu.hanana.reimu.lib.rjcef.common.ICefRenderer;
 
 import java.awt.*;
@@ -82,6 +83,17 @@ public class ClientRender implements ICefRenderer {
         }
 
         client.cnc.channel.writeAndFlush(composite);
+    }
+
+    @Override
+    public void onTitleChange(IBrowser cefBrowserMC, String title) {
+        ICefRenderer.super.onTitleChange(cefBrowserMC, title);
+        ByteBuf headerBuf = client.cnc.channel.alloc().buffer();
+        BufUtil.writeString(client.remoteCommands.BROWSER_onTitleChange, headerBuf);
+        BufUtil.writeString(clientUuid, headerBuf);
+        BufUtil.writeString(uuid, headerBuf);
+        BufUtil.writeString(title, headerBuf);
+        client.cnc.channel.writeAndFlush(headerBuf);
     }
 
     @Override

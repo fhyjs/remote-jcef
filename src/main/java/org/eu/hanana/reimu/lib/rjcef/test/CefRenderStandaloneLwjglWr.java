@@ -47,9 +47,11 @@ public class CefRenderStandaloneLwjglWr implements ICefRenderer {
     }
 
     @Override
-    public void onTitleChange(CefBrowserMC cefBrowserMC, String title) {
+    public void onTitleChange(IBrowser cefBrowserMC, String title) {
         ICefRenderer.super.onTitleChange(cefBrowserMC, title);
-        addTask(() -> glfwSetWindowTitle(window, title));
+        title="HANANA集团:高性能进程分离浏览器--专为java防崩溃嵌入式浏览器而生!/LWJGL3/JAVA%s(%s-%s) ".formatted(System.getProperty("java.version"),System.getProperty("java.vm.name"),System.getProperty("java.vendor"))+title;
+        String finalTitle = title;
+        addTask(() -> glfwSetWindowTitle(window, finalTitle));
     }
 
     @Override
