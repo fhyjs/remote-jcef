@@ -8,11 +8,15 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://maven.hanana2.link:2053/releases'
+    }
 }
 project.ext.lwjglVersion = "3.3.3"
 project.ext.lwjglNatives = "natives-windows"
 dependencies {
-
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
     implementation "org.lwjgl:lwjgl"
@@ -30,7 +34,7 @@ dependencies {
         exclude group: "me.friwi", module: "jcef-api"
         exclude group: "me.friwi", module: "jcef.api"
     }
-    implementation (fileTree("libs"))
+    implementation 'org.eu.hanana.reimu.lib:jcef-api:1.0.3'
     implementation("org.apache.logging.log4j:log4j-api:2.25.3")
     implementation('org.apache.logging.log4j:log4j-core:2.25.3')
 

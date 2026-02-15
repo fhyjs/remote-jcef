@@ -36,6 +36,17 @@ public class RemoteCommands {
     public final String BROWSER_goBack = "BROWSER_goBack";
     public final String BROWSER_goForward = "BROWSER_goForward";
     public final String BROWSER_onTitleChange = "BROWSER_onTitleChange";
+    public final String APPHANDLER_onContextInitialized = "APPHANDLER_onContextInitialized";
+    public final String APPHANDLER_onRegisterCustomSchemes = "APPHANDLER_onRegisterCustomSchemes";
+    public final String APPHANDLER_stateHasChanged = "APPHANDLER_stateHasChanged";
+    public final String APP_addCustomScheme = "APP_addCustomScheme";
+    public final String CefResourceHandlerAdapter_processRequest = "CefResourceHandlerAdapter_processRequest";
+    public final String CefResourceHandlerAdapter_finalize = "CefResourceHandlerAdapter_finalize";
+    public final String CefResourceHandlerAdapter_cancel = "CefResourceHandlerAdapter_cancel";
+    public final String CefResourceHandlerAdapter_readResponse = "CefResourceHandlerAdapter_readResponse";
+    public final String CefResourceHandlerAdapter_getResponseHeaders = "CefResourceHandlerAdapter_getResponseHeaders";
+    public final String APP_addRequestProcessor = "APP_addRequestProcessor";
+    public final String NetCefSchemeHandlerFactory_create = "NetCefSchemeHandlerFactory_create";
     public final String CREATE_APP = "ct_app";
     public final String CREATE_BROWSER = "ct_bro";
     public final String CREATE_BROWSER_IMMEDIATELY = "ct_bro_imm";
@@ -60,6 +71,7 @@ public class RemoteCommands {
                 byteBuf.writeBoolean(true);
                 //byteBuf.writeInt(apply.readableBytes());
                 byteBuf.writeBytes(apply, apply.readerIndex(), apply.readableBytes());
+                apply.release();
             } catch (Throwable e) {
                 byteBuf.writeBoolean(false);
                 try {

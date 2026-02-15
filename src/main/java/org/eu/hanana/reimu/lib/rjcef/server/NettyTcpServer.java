@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.eu.hanana.reimu.lib.rjcef.common.GlobalWriteListener;
 
 public class NettyTcpServer {
 
@@ -39,6 +40,7 @@ public class NettyTcpServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) {
+                            ch.pipeline().addLast(new GlobalWriteListener());
                             ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(
                                     100 * 1024 * 1024, // 最大帧长度
                                     0,                 // 长度字段偏移 0

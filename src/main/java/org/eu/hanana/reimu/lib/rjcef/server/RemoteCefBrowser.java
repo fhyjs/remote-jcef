@@ -664,7 +664,7 @@ public class RemoteCefBrowser implements CefBrowser, IBrowser {
 
     @Override
     public CompletableFuture<BufferedImage> createScreenshot(boolean nativeResolution) {
-        return null;
+        return cefRenderer.createScreenshot(nativeResolution);
     }
 
     @Override

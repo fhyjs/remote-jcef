@@ -3,12 +3,17 @@ package org.eu.hanana.reimu.lib.rjcef.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import me.friwi.jcefmaven.CefAppBuilder;
 import me.friwi.jcefmaven.CefInitializationException;
 import me.friwi.jcefmaven.UnsupportedPlatformException;
 import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.browser.CefBrowser;
+import org.cef.browser.CefFrame;
 import org.cef.browser.CefRequestContext;
+import org.cef.callback.CefContextMenuParams;
+import org.cef.callback.CefMenuModel;
+import org.cef.handler.CefContextMenuHandlerAdapter;
 import org.cef.handler.CefDisplayHandlerAdapter;
 import org.eu.hanana.reimu.lib.rjcef.common.BufUtil;
 import org.eu.hanana.reimu.lib.rjcef.common.CallbackRegister;
@@ -21,13 +26,16 @@ import java.util.function.Consumer;
 
 public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements CallbackRegister {
     public static ClientMain INSTANCE;
-    public  int port;
+    public NetCefAppHandler cefAppHandler;
+    public final int port;
     public  CefApp cefApp;
     public  CefNettyClient cnc;
     public  RemoteCommands remoteCommands = new RemoteCommands(this);
-    public Map<String, CefClient> cefClientMap= new HashMap<>();
-    public Map<String, Map<String,CefBrowserMC>> browserMCHashMap= new HashMap<>();//client's uuid
-    public Map<String, Consumer<Tuple<ByteBuf, ChannelHandlerContext>>> callbacks = new HashMap<>();
+    public final Map<String, CefClient> cefClientMap= new HashMap<>();
+    public final Map<String, Map<String,CefBrowserMC>> browserMCHashMap= new HashMap<>();//client's uuid
+    public final Map<String, Consumer<Tuple<ByteBuf, ChannelHandlerContext>>> callbacks = new HashMap<>();
+    public final Map<String,CustomSchemeCfg> customSchemeCfgMap = new HashMap<>();
+    public final Map<String,NetCefSchemeHandlerFactory> netCefSchemeHandlerFactoryMap = new HashMap<>();
     public static void main(String[] args) throws UnsupportedPlatformException, CefInitializationException, IOException, InterruptedException {
         INSTANCE= new ClientMain(args);
     }
@@ -43,8 +51,20 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
         remoteCommands.regHandler(remoteCommands.CREATE_APP, byteBuf -> {
             System.out.println("CREATE_APP");
             try {
-                cefApp=CelInstaller.getBuilder().build();
-            } catch (IOException | CefInitializationException | InterruptedException | UnsupportedPlatformException e) {
+                CefAppBuilder builder = CelInstaller.getBuilder();
+                builder.setAppHandler(this.cefAppHandler=new NetCefAppHandler(this));
+                var b = new boolean[]{false};
+                new Thread(()->{
+                    try {
+                        cefApp = builder.build();
+                        b[0]=true;
+                    } catch (IOException | UnsupportedPlatformException | InterruptedException |
+                             CefInitializationException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).start();
+                while (!b[0]) Thread.sleep(10);
+            } catch (InterruptedException  e) {
                 throw new RuntimeException(e);
             }
             return null;
@@ -63,6 +83,34 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
 
                     // 例如：同步到窗口标题 / UI
                     // glfwSetWindowTitle(window, title);
+                }
+            });
+            client.addContextMenuHandler(new CefContextMenuHandlerAdapter() {
+
+                @Override
+                public void onBeforeContextMenu(
+                        CefBrowser browser,
+                        CefFrame frame,
+                        CefContextMenuParams params,
+                        CefMenuModel model) {
+
+                    // 清空默认菜单（关键）
+                    model.clear();
+                }
+
+                @Override
+                public boolean onContextMenuCommand(
+                        CefBrowser browser,
+                        CefFrame frame,
+                        CefContextMenuParams params,
+                        int commandId,
+                        int eventFlags) {
+
+                    return false;
+                }
+
+                @Override
+                public void onContextMenuDismissed(CefBrowser browser, CefFrame frame) {
                 }
             });
             cefClientMap.put(uuid, client);
@@ -158,6 +206,29 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             browserMCHashMap.get(uuidClient).get(uuid).close();
             browserMCHashMap.get(uuidClient).remove(uuid);
             return null;
+        });
+        remoteCommands.regHandler(remoteCommands.APP_addCustomScheme, tuple -> {
+            var bb = tuple.a();
+            String schemeName = BufUtil.readString(bb); // 或者手动读 int+bytes
+            boolean isStandard = bb.readBoolean();
+            boolean isLocal = bb.readBoolean();
+            boolean isDisplayIsolated = bb.readBoolean();
+            boolean isSecure = bb.readBoolean();
+            boolean isCorsEnabled = bb.readBoolean();
+            boolean isCspBypassing = bb.readBoolean();
+            boolean isFetchEnabled = bb.readBoolean();
+            if (customSchemeCfgMap.containsKey(schemeName)) return bb.alloc().buffer().writeBoolean(false);
+            customSchemeCfgMap.put(schemeName,new CustomSchemeCfg(schemeName,isStandard,isLocal,isDisplayIsolated,isSecure,isCorsEnabled,isCspBypassing,isFetchEnabled));
+            return bb.alloc().buffer().writeBoolean(true);
+        });
+        remoteCommands.regHandler(remoteCommands.APP_addRequestProcessor, tuple -> {
+            var bb = tuple.a();
+            String schemeName = BufUtil.readString(bb);
+            String uuid = BufUtil.readString(bb);
+
+            if (netCefSchemeHandlerFactoryMap.containsKey(schemeName)) return bb.alloc().buffer().writeBoolean(false);
+            netCefSchemeHandlerFactoryMap.put(schemeName,new NetCefSchemeHandlerFactory(uuid,this,schemeName));
+            return bb.alloc().buffer().writeBoolean(true);
         });
         cnc.start();
     }

@@ -1,6 +1,7 @@
 package org.eu.hanana.reimu.lib.rjcef.common;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -21,7 +22,26 @@ public class BufUtil {
         byteBuf1.writeBytes(byteBuf);
         byteBuf.release();
         callbackRegister.registerCallback(uuid,callback);
-        return channel.writeAndFlush(byteBuf1);
+        return channel.writeAndFlush(byteBuf1).addListener((ChannelFuture future) -> {
+            if (!future.isSuccess()) {
+                Throwable cause = future.cause();
+                System.err.println("sendPacketWithCallback Error: " + cause);
+                callbackRegister.removeCallback(uuid);
+                ByteBuf byteBuf11 = channel.alloc().directBuffer();
+                byteBuf11.writeBoolean(false);
+                    try {
+                        BufUtil.writeThrowable(byteBuf11,cause);
+                    } catch (Throwable ex) {
+                        ex.printStackTrace();
+                    }
+                try {
+                    callback.accept(new Tuple<>(byteBuf11,null));
+                }finally {
+                    byteBuf11.release();
+                }
+                // 这里可以做全局处理，比如日志、重试等
+            }
+        });
     }
     public static void writeThrowable(ByteBuf buf, Throwable t) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -49,6 +69,32 @@ public class BufUtil {
         b.writeInt(ba.length);
         b.writeBytes(ba);
     }
+    public static byte[] toBytes(Serializable obj) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(obj);
+        oos.flush();
+        return bos.toByteArray();
+    }
+    public static void writeBytes(byte[] data, ByteBuf buf) {
+        buf.writeInt(data.length);
+        buf.writeBytes(data);
+    }
+    public static <T> T fromBytes(byte[] data, Class<T> type)
+            throws IOException, ClassNotFoundException {
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        return type.cast(ois.readObject());
+    }
+
+    public static byte[] readBytes(ByteBuf buf) {
+        int len = buf.readInt();
+        byte[] data = new byte[len];
+        buf.readBytes(data);
+        return data;
+    }
+
     public static String readString(ByteBuf b) {
         int len = b.readInt();
         byte[] bytes = new byte[len];

@@ -141,7 +141,11 @@ public class CefRenderStandaloneLwjglWr implements ICefRenderer {
             glDeleteTextures(texture_id_);
             texture_id_ = 0;
         }
-        cefBrowserMC.close();
+        try {
+            cefBrowserMC.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
 
@@ -176,6 +180,12 @@ public class CefRenderStandaloneLwjglWr implements ICefRenderer {
         //if (true) return;
         if (texture_id_ == 0) {
             // 确保纹理已生成
+            // 或者 GLFW
+            try {
+                GL.getCapabilities();
+            }catch (Exception e) {
+                return;
+            }
             texture_id_ = GL11.glGenTextures();
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture_id_);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -429,7 +439,11 @@ public class CefRenderStandaloneLwjglWr implements ICefRenderer {
         GL.createCapabilities();
         exInit();
         GL11.glClearColor(1f, 1f, 1f, 1.0f);
-
+        // 或者 GLFW
+        glfwMakeContextCurrent(window);
+        if (GL.getCapabilities() == null) {
+            GL.createCapabilities();
+        }
         while (!glfwWindowShouldClose(window)&&!destroyed) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             try (MemoryStack stack = stackPush()) {
