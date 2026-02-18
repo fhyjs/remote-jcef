@@ -624,7 +624,7 @@ public class RemoteCefBrowser implements CefBrowser, IBrowser {
 
     @Override
     public void onJSDialog(CefBrowser browser, String originUrl, CefJSDialogHandler.JSDialogType dialogType, String messageText, String defaultPromptText, CefJSDialogCallback callback, BoolRef suppressMessage) {
-
+        cefRenderer.onJsAlert(this,originUrl,dialogType,messageText,defaultPromptText,callback,suppressMessage);
     }
 
     @Override

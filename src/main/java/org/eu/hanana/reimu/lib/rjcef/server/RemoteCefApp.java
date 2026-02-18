@@ -12,9 +12,13 @@ import lombok.Getter;
 import org.apache.logging.log4j.Logger;
 import org.cef.CefApp;
 import org.cef.callback.CefCallback;
+import org.cef.callback.CefJSDialogCallback;
+import org.cef.handler.CefJSDialogHandler;
 import org.cef.handler.CefResourceHandler;
+import org.cef.misc.BoolRef;
 import org.cef.misc.IntRef;
 import org.cef.misc.StringRef;
+import org.eu.hanana.reimu.lib.rjcef.client.CefBrowserMC;
 import org.eu.hanana.reimu.lib.rjcef.client.ClientMain;
 import org.eu.hanana.reimu.lib.rjcef.common.*;
 
@@ -187,6 +191,34 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
 
             return null;
         });
+        remoteCommands.regHandler(remoteCommands.BROWSER_onJsAlert, tuple -> {
+            var uuidClient = BufUtil.readString(tuple.a());
+            var uuidBrowser = BufUtil.readString(tuple.a());
+            var uuidCallback = BufUtil.readString(tuple.a());
+            remoteCefClientMap.get(uuidClient).browserMap.get(uuidBrowser).onJSDialog(null, BufUtil.readString(tuple.a()), BufUtil.readEnum(CefJSDialogHandler.JSDialogType.class, tuple.a()), BufUtil.readString(tuple.a()), BufUtil.readString(tuple.a()), new CefJSDialogCallback() {
+                @Override
+                public void Continue(boolean success, String user_input) {
+                    ByteBuf headerBuf = client.alloc().buffer();
+                    BufUtil.writeString(remoteCommands.BROWSER_onJsAlert, headerBuf);
+                    BufUtil.writeString(uuidClient, headerBuf);
+                    BufUtil.writeString(uuidBrowser, headerBuf);
+                    BufUtil.writeString(uuidCallback, headerBuf);
+
+                    headerBuf.writeBoolean(success);
+                    BufUtil.writeString(user_input, headerBuf);
+
+                    client.writeAndFlush(headerBuf);
+                }
+
+                @Override
+                protected void finalize() throws Throwable {
+                    Continue(false,"");
+                    super.finalize();
+                }
+            },new BoolRef(false));
+
+            return null;
+        });
     }
 
     protected void setConnected(boolean connected) {
@@ -214,6 +246,10 @@ public class RemoteCefApp extends SimpleChannelInboundHandler<ByteBuf> implement
         try{
             String cmd = BufUtil.readString(msg);
             //System.out.println("SV cmd: "+ cmd);
+            if (!remoteCommands.processor.containsKey(cmd)){
+                System.out.println("SV Unknown cmd :"+cmd);
+                return;
+            }
             remoteCommands.processor.get(cmd).apply(new Tuple<>(msg,ctx));
         }catch (Exception e){
             e.printStackTrace();

@@ -52,6 +52,7 @@ public class RemoteCommands {
     public final String CREATE_BROWSER_IMMEDIATELY = "ct_bro_imm";
     public final String CREATE_CLIENT = "ct_cli";
     public final String BROWSER_ONPAINT = "bro_onp";
+    public final String BROWSER_onJsAlert = "bro_onJsAlert";
     public final String CONFIRM_START = "cf_star";
     public RemoteCommands(CallbackRegister register){
         this.cr=register;

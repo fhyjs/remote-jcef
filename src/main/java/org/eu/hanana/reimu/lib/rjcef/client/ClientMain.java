@@ -12,9 +12,12 @@ import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
 import org.cef.browser.CefRequestContext;
 import org.cef.callback.CefContextMenuParams;
+import org.cef.callback.CefJSDialogCallback;
 import org.cef.callback.CefMenuModel;
 import org.cef.handler.CefContextMenuHandlerAdapter;
 import org.cef.handler.CefDisplayHandlerAdapter;
+import org.cef.handler.CefJSDialogHandlerAdapter;
+import org.cef.misc.BoolRef;
 import org.eu.hanana.reimu.lib.rjcef.common.BufUtil;
 import org.eu.hanana.reimu.lib.rjcef.common.CallbackRegister;
 import org.eu.hanana.reimu.lib.rjcef.common.RemoteCommands;
@@ -113,6 +116,16 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
                 public void onContextMenuDismissed(CefBrowser browser, CefFrame frame) {
                 }
             });
+            client.addJSDialogHandler(new CefJSDialogHandlerAdapter() {
+                @Override
+                public boolean onJSDialog(CefBrowser browser, String origin_url, JSDialogType dialog_type, String message_text, String default_prompt_text, CefJSDialogCallback callback, BoolRef suppress_message) {
+                    if (browser instanceof CefBrowserMC cefBrowserMC){
+                        cefBrowserMC.onJSDialog(cefBrowserMC,origin_url,dialog_type,message_text,default_prompt_text,callback,suppress_message);
+                        return true;
+                    }
+                    return super.onJSDialog(browser, origin_url, dialog_type, message_text, default_prompt_text, callback, suppress_message);
+                }
+            });
             cefClientMap.put(uuid, client);
             browserMCHashMap.put(uuid,new HashMap<>());
             ByteBuf byteBuf = tuple.b().alloc().directBuffer();
@@ -127,6 +140,7 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             String uuid = UUID.randomUUID().toString();
             System.out.println(uuidClient);
             browserMCHashMap.get(uuidClient).put(uuid,new CefBrowserMC(cefClientMap.get(uuidClient),url,true, CefRequestContext.getGlobalContext(),new ClientRender(uuid,uuidClient,this)));
+            browserMCHashMap.get(uuidClient).get(uuid).setUuid(uuid);
             ByteBuf byteBuf = tuple.b().alloc().directBuffer();
             BufUtil.writeString(uuid,byteBuf);
             return byteBuf;
@@ -207,6 +221,24 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             browserMCHashMap.get(uuidClient).remove(uuid);
             return null;
         });
+        remoteCommands.regHandler(remoteCommands.BROWSER_canGoBack, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+
+            return cnc.channel.alloc().directBuffer().writeBoolean(browserMCHashMap.get(uuidClient).get(uuid).canGoBack());
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_canGoForward, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+
+            return cnc.channel.alloc().directBuffer().writeBoolean(browserMCHashMap.get(uuidClient).get(uuid).canGoForward());
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_isLoading, tuple -> {
+            String uuidClient = BufUtil.readString(tuple.a());
+            String uuid = BufUtil.readString(tuple.a());
+
+            return cnc.channel.alloc().directBuffer().writeBoolean(browserMCHashMap.get(uuidClient).get(uuid).isLoading());
+        });
         remoteCommands.regHandler(remoteCommands.APP_addCustomScheme, tuple -> {
             var bb = tuple.a();
             String schemeName = BufUtil.readString(bb); // 或者手动读 int+bytes
@@ -229,6 +261,17 @@ public class ClientMain extends SimpleChannelInboundHandler<ByteBuf> implements 
             if (netCefSchemeHandlerFactoryMap.containsKey(schemeName)) return bb.alloc().buffer().writeBoolean(false);
             netCefSchemeHandlerFactoryMap.put(schemeName,new NetCefSchemeHandlerFactory(uuid,this,schemeName));
             return bb.alloc().buffer().writeBoolean(true);
+        });
+        remoteCommands.regHandler(remoteCommands.BROWSER_onJsAlert, tuple -> {
+            var bb = tuple.a();
+            var uuidClient = BufUtil.readString(bb);
+            var uuidBrowser = BufUtil.readString(bb);
+            var uuidCallback = BufUtil.readString(bb);
+            CefJSDialogCallback cefJSDialogCallback = browserMCHashMap.get(uuidClient).get(uuidBrowser).jsAlertCalllbacks.get(uuidCallback);
+            browserMCHashMap.get(uuidClient).get(uuidBrowser).jsAlertCalllbacks.remove(uuidCallback);
+            cefJSDialogCallback.Continue(bb.readBoolean(),BufUtil.readString(bb));
+
+            return null;
         });
         cnc.start();
     }

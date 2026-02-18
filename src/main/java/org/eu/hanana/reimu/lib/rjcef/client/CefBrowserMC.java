@@ -1,5 +1,6 @@
 package org.eu.hanana.reimu.lib.rjcef.client;
 
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cef.CefBrowserSettings;
@@ -25,6 +26,8 @@ import java.awt.image.BufferedImage;
 import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -38,13 +41,15 @@ public class CefBrowserMC  extends CefBrowser_N implements CefRenderHandler , Cl
     private final long window_handler = this.hashCode();
     private static final Logger log = LogManager.getLogger(CefBrowserMC.class);
     private final ICefRenderer renderer_;
+    public final Map<String,CefJSDialogCallback> jsAlertCalllbacks = new HashMap<>();
     private boolean justCreated_ = false;
     private final Rectangle browser_rect_ = new Rectangle(0, 0, 1, 1);
     private final Point screenPoint_ = new Point(0, 0);
     private final boolean isTransparent_;
     private final Component dc_ = new Component(){};
     protected  String title="Loading";
-
+    @Setter
+    public String uuid;
     public CefBrowserMC(CefClient client, String url, boolean transparent, CefRequestContext context, ICefRenderer renderer) {
         this(client, url, transparent, context, renderer, null, null,new CefBrowserSettings());
     }

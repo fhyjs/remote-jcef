@@ -69,6 +69,12 @@ public class BufUtil {
         b.writeInt(ba.length);
         b.writeBytes(ba);
     }
+    public static void writeEnum(Enum<?> val,ByteBuf b){
+        writeString(val.name(),b);
+    }
+    public static <T extends Enum<T>> T readEnum(Class<T> clazz, ByteBuf b){
+        return Enum.valueOf(clazz,readString(b));
+    }
     public static byte[] toBytes(Serializable obj) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);

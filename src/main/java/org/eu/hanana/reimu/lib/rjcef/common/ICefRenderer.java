@@ -16,8 +16,9 @@ import static org.eu.hanana.reimu.lib.rjcef.common.IBrowser.restoreRect;
 
 
 public interface ICefRenderer {
-    default void onJsAlert(CefBrowserMC browser, String originUrl, CefJSDialogHandler.JSDialogType dialogType, String messageText, String defaultPromptText, CefJSDialogCallback callback, BoolRef suppressMessage){
-        callback.Continue(false,"");
+    default void onJsAlert(IBrowser browser, String originUrl, CefJSDialogHandler.JSDialogType dialogType, String messageText, String defaultPromptText, CefJSDialogCallback callback, BoolRef suppressMessage){
+        suppressMessage.set(false);
+        callback.Continue(true,"hello RJCEF");
     }
     void render(double x1, double y1, double x2, double y2);
 

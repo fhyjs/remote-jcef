@@ -2,6 +2,9 @@ package org.eu.hanana.reimu.lib.rjcef.client;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
+import org.cef.callback.CefJSDialogCallback;
+import org.cef.handler.CefJSDialogHandler;
+import org.cef.misc.BoolRef;
 import org.eu.hanana.reimu.lib.rjcef.common.BufUtil;
 import org.eu.hanana.reimu.lib.rjcef.common.IBrowser;
 import org.eu.hanana.reimu.lib.rjcef.common.ICefRenderer;
@@ -9,6 +12,7 @@ import org.eu.hanana.reimu.lib.rjcef.common.ICefRenderer;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class ClientRender implements ICefRenderer {
@@ -20,6 +24,25 @@ public class ClientRender implements ICefRenderer {
         this.uuid=uuid;
         this.client=clientMain;
         this.clientUuid=uuidClient;
+    }
+
+    @Override
+    public void onJsAlert(IBrowser browser, String originUrl, CefJSDialogHandler.JSDialogType dialogType, String messageText, String defaultPromptText, CefJSDialogCallback callback, BoolRef suppressMessage) {
+        ByteBuf headerBuf = client.cnc.channel.alloc().buffer();
+        BufUtil.writeString(client.remoteCommands.BROWSER_onJsAlert, headerBuf);
+        BufUtil.writeString(clientUuid, headerBuf);
+        BufUtil.writeString(uuid, headerBuf);
+
+        var uuidAlert = UUID.randomUUID().toString();
+        BufUtil.writeString(uuidAlert, headerBuf);
+
+        BufUtil.writeString(originUrl, headerBuf);
+        BufUtil.writeEnum(dialogType, headerBuf);
+        BufUtil.writeString(messageText,headerBuf);
+        BufUtil.writeString(defaultPromptText,headerBuf);
+
+        ((CefBrowserMC) browser).jsAlertCalllbacks.put(uuidAlert,callback);
+        client.cnc.channel.writeAndFlush(headerBuf);
     }
 
     @Override

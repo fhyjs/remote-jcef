@@ -4,9 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>The RJCEF TEST page</title>
+    <style>
+        body { background-color: #ffdead; font-family: sans-serif; padding: 20px; }
+        button { margin: 5px; padding: 10px; }
+        #output { margin-top: 20px; padding: 10px; background-color: #fff8dc; border: 1px solid #ccc; }
+    </style>
 </head>
-<body bgcolor="#ffdead">
-    <h1>RJCEF</h1>
-    <button >Button</button>
+<body>
+<h1>RJCEF 弹出测试</h1>
+
+<button onclick="testAlert()">alert</button>
+<button onclick="testConfirm()">confirm</button>
+<button onclick="testPrompt()">prompt</button>
+
+<div id="output"></div>
+
+<script>
+    const output = document.getElementById('output');
+
+    function logResult(message) {
+        const p = document.createElement('p');
+        p.textContent = message;
+        output.appendChild(p);
+    }
+
+    function testAlert() {
+        alert("这是一个 alert 弹出");
+        logResult("alert 弹出已显示。");
+    }
+
+    function testConfirm() {
+        const result = confirm("这是一个 confirm 弹出，选择确定或取消");
+        logResult("confirm 返回: " + result);
+    }
+
+    function testPrompt() {
+        const result = prompt("这是一个 prompt 弹出，请输入内容");
+        logResult("prompt 返回: " + result);
+    }
+</script>
 </body>
 </html>
